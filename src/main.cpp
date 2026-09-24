@@ -26,6 +26,9 @@ enum GameAction{
 
 const uint8_t block_size = 8;
 
+const uint8_t matrix_width = 10;
+const uint8_t matrix_height = 20;
+
 const uint8_t min_x = 4;
 const uint8_t max_x = 13;
 
@@ -38,6 +41,8 @@ const uint8_t button_left = 35;
 //Function declaration
 //------------------------------------------------------------------------------------------
 
+void renderMatrix(uint8_t set_y=max_y);
+void checkFixation();
 void getInput();
 void applyShapeAction();
 void summonShape();
@@ -46,6 +51,8 @@ bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation);
 bool checkCollision();
 uint16_t getColor(uint8_t color_ind);
 void renderShape(bool clean_out, uint8_t set_rotation = 0, uint8_t set_x = 0, uint8_t set_y = 0);
+void completeRows(uint8_t set_y);
+void renderRow(uint8_t set_y);
 
 //------------------------------------------------------------------------------------------
 
@@ -60,6 +67,11 @@ GameAction next_action = none;
 
 uint8_t screen_width = 135;
 uint8_t screen_height = 240;
+
+uint32_t total_score = 0;
+const uint8_t score_multip_stack = 15;
+const uint16_t add_score_base = 100;
+uint16_t add_score = 0;
 
 // shape id, rotation, y, x
 const uint8_t shapes[7][4][4][4] = {
@@ -211,9 +223,11 @@ uint32_t main_timer = 0;
 uint32_t tick_time = 300;
 // uint8_t tick_counter = 0;
 uint8_t falldown_ticks = 3;
-
 uint8_t tick_count_falldown = 0;
 bool gm_ticked = false;
+
+uint8_t tick_count_fixation = 0;
+uint8_t fixation_ticks = 5;
 
 void setup() {
   // Use serial port
@@ -242,7 +256,6 @@ void setup() {
 
 void loop(void) {
 
-
   getInput();
 
   if ((millis() - main_timer) > tick_time) {
@@ -253,13 +266,11 @@ void loop(void) {
 
   if (!game_pause) {
     if (gm_ticked) {
-
+      applyShapeAction();
       
       if (tick_count_falldown >= falldown_ticks) {
         moveShape(0, 1, 1);
       }
-
-      applyShapeAction();
       
       gm_ticked = false;
 
@@ -313,6 +324,9 @@ void applyShapeAction() {
 void summonShape() {
   current_x = (max_x - min_x) / 2;
   current_y = 0;
+
+  current_shape = getNextShape();
+  current_rotation = 0;
 }
 
 
@@ -350,48 +364,128 @@ void renderShape(bool clean_out, uint8_t set_rotation, uint8_t set_x, uint8_t se
 }
 
 
+void renderMatrix(uint8_t set_y) {
+  uint8_t mat_y = set_y - y_offset;
+
+  tft.drawRect(0, 0, block_size * matrix_width, block_size * mat_y, BLACK);
+
+  for (uint8_t iy = mat_y; iy >= 0; iy--) {
+
+    renderRow(iy);
+  }
+}
+
+// ну, тип, красиво же?
+void renderRow(uint8_t set_y) {
+  for (uint8_t ix = 0; ix < matrix_width; ix++) {
+
+      if (game_matrix[set_y][ix] > 0) {
+        tft.drawRect(ix * block_size, set_y * block_size, block_size, block_size, getColor(game_matrix[set_y][ix]));
+      }
+    }
+}
+
+/*
+Receives position to shift to (matrix cord)
+e.g. set_y = 1 --> shifts matrix down to 1 (from 1)
+
+
+*/
+void shiftMatrix(uint8_t mat_y) {
+
+  for (uint8_t iy = mat_y - 1; iy <= y_offset; ++iy) {
+    for (uint8_t ix = 0; ix <= max_x - min_x; ++ix) {
+      game_matrix[iy-1][ix] = game_matrix[iy][ix];
+    }
+  }
+}
+
+
+void completeRows(uint8_t set_y) {
+
+  uint8_t mat_y = set_y - y_offset;
+
+  bool full = true;
+
+  for (uint8_t iy = 0; iy < 4; ++iy) {
+    full = true;
+
+    for (uint8_t mat_x = 0; mat_x <= max_x - min_x; ++mat_x) {
+      
+      if (game_matrix[mat_y + iy][mat_x] == 0) {
+        full = false;
+        break;
+      }
+    }
+
+    if (full) {
+      shiftMatrix(mat_y + iy);
+      renderMatrix(set_y);
+
+      if (add_score = 0) {
+        add_score = 100;
+      }
+      else {
+        add_score *= score_multip_stack;
+        add_score /= 10;
+      }
+    }
+    else {
+      total_score += add_score;
+      add_score = 0;
+    }
+  }
+}
+
+
 uint16_t getColor(uint8_t color_ind) {
   switch (color_ind) {
-    case (0): {
+    case (1): {
 
       return RED;
 
       break;
     }
-    case (1): {
+    case (2): {
 
       return BLUE;
       
       break;
     }
-    case (2): {
+    case (3): {
 
       return GREEN;
       
       break;
     }
-    case (3): {
+    case (4): {
 
       return YELLOW;
       
       break;
     }
-    case (4): {
+    case (5): {
 
       return PINK;
       
       break;
     }
-    case (5): {
+    case (6): {
 
       return PURPLE;
       
       break;
     }
-    case (6): {
+    case (7): {
 
       return CYAN;
       
+      break;
+    }
+    default: {
+
+      return BLACK;
+
       break;
     }
   }
@@ -418,6 +512,21 @@ bool checkCollision() {
         return false;
       }
     }
+  }
+
+  return true;
+}
+
+
+void checkFixation() {
+
+  tick_count_falldown++;
+
+  if (tick_count_falldown >= falldown_ticks) {
+    tick_count_falldown = 0;
+
+    completeRows(current_y);
+    summonShape();
   }
 }
 
@@ -450,13 +559,21 @@ bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation) {
     current_x -= modif_x;
     current_y -= modif_y;
     current_rotation = prev_rotation;
+    
+    if (modif_y > 0) {
+      checkFixation();
+    }
 
     return false;
   }
   else {
-    renderShape(true, prev_rotation, current_x - modif_x, current_y - modif_y);
 
-    renderShape(false, current_rotation, current_x, current_y);
+    if (current_y >= y_offset) {
+      renderShape(true, prev_rotation, current_x - modif_x, current_y - modif_y);
+
+      renderShape(false, current_rotation, current_x, current_y);
+    }
+    
     return true;
   }
 }
