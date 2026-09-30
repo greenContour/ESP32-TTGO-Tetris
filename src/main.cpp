@@ -250,6 +250,8 @@ void setup() {
 
   // Initialise the TFT screen
   tft.init();
+
+  resetGame();
 }
 
 //------------------------------------------------------------------------------------------
@@ -364,6 +366,10 @@ void renderShape(bool clean_out, uint8_t set_rotation, uint8_t set_x, uint8_t se
 }
 
 
+/*
+renders the matrix starting from set_y (default - 23)
+from bottom to top (23 - 4)
+*/
 void renderMatrix(uint8_t set_y) {
   uint8_t mat_y = set_y - y_offset;
 
@@ -388,8 +394,6 @@ void renderRow(uint8_t set_y) {
 /*
 Receives position to shift to (matrix cord)
 e.g. set_y = 1 --> shifts matrix down to 1 (from 1)
-
-
 */
 void shiftMatrix(uint8_t mat_y) {
 
@@ -526,8 +530,46 @@ void checkFixation() {
     tick_count_falldown = 0;
 
     completeRows(current_y);
+
+    if (current_y < y_offset) {
+      gameOver();
+    }
+
     summonShape();
   }
+}
+
+
+void resetGame() {
+
+  for (uint8_t iy = 0; iy < matrix_height; ++iy) {
+    for (uint8_t ix = 0; ix < matrix_width; ++ix) {
+      game_matrix[iy][ix] = 0;
+    }
+  }
+
+  current_rotation = 0;
+  current_shape = getNextShape();
+
+  tick_count_fixation = 0;
+  tick_count_falldown = 0;
+
+  total_score = 0;
+
+  main_timer = millis();
+
+  next_action = none;
+  current_x = ((max_x - min_x) / 2) + min_x;
+
+  renderMatrix();
+}
+
+
+
+void gameOver() {
+
+  resetGame();
+
 }
 
 

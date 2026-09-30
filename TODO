@@ -1,0 +1,17 @@
+Add more control functions:
+    - rotation
+    - movement
+    - pause/start
+
+Add render:
+    - score
+    - game matrix (positioned, so its not randomly rendered)
+    - borders
+
+Stress test/debug:
+    - ?
+
+Add game mechanic:
+    - speed drop
+    - show next figure
+    - game over
