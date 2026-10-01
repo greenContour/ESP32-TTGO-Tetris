@@ -5,13 +5,15 @@ Add more control functions:
 
 Add render:
     - score
-    - game matrix (positioned, so its not randomly rendered)
     - borders
+    - better general area render
+    - change colors to something more suitable
 
 Stress test/debug:
-    - ?
+    - input
 
 Add game mechanic:
     - speed drop
     - show next figure
-    - game over
+    - show score on gameOver
+    - save scores???
