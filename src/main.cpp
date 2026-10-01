@@ -40,20 +40,26 @@ const uint8_t button_left = 35;
 
 //Function declaration
 //------------------------------------------------------------------------------------------
-
-void renderMatrix(uint8_t set_y=max_y);
 void checkFixation();
+void completeRows(uint8_t set_y);
+
 void getInput();
 void applyShapeAction();
+
 void summonShape();
 uint8_t getNextShape();
+
 bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation);
 bool checkCollision();
-uint16_t getColor(uint8_t color_ind);
-void renderShape(bool clean_out, uint8_t set_rotation = 0, uint8_t set_x = 0, uint8_t set_y = 0);
-void completeRows(uint8_t set_y);
-void renderRow(uint8_t set_y);
 
+uint16_t getColor(uint8_t color_ind);
+
+void renderRow(uint8_t set_y);
+void renderMatrix(uint8_t set_y=max_y);
+void renderShape(bool clean_out, uint8_t set_rotation = 0, uint8_t set_x = 0, uint8_t set_y = 0);
+
+void resetGame();
+void gameOver();
 //------------------------------------------------------------------------------------------
 
 uint8_t current_x;
