@@ -1,19 +1,23 @@
-Add more control functions:
-    - rotation
-    - fix rotation
-    - pause/start
+Finetune:
+    - drop speed
+    - control time/delays
 
-Add render:
-    - score
-    - borders
-    - better general area render
-    - change colors to something more suitable
+Add :
+    render:
+        - score
+        - borders
+        - misc
+    game mechanic:
+        - speed drop
+        - show next figure
+        - show score on gameOver
+        - save scores???
+        - row completion delay - (remove the delay() function!)
+    more control functions:
+        - pause/start
+
 
 Stress test/debug:
     - input
 
-Add game mechanic:
-    - speed drop
-    - show next figure
-    - show score on gameOver
-    - save scores???
+
