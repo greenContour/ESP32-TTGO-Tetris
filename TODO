@@ -1,6 +1,6 @@
 Add more control functions:
     - rotation
-    - movement
+    - fix rotation
     - pause/start
 
 Add render:

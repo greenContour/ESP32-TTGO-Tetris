@@ -13,12 +13,19 @@ enum GameAction{
 };
 
 enum ButtonAction{
-  no_press,
-  thresh_area,
-  pressed,
-  short_press_area,
+  no_action,
+  short_press,
   long_press,
 };
+
+
+enum ButtonState{
+  no_press,
+  active_no_press,
+  short_press_state,
+  long_press_state,
+};
+
 
 #define BLACK 0x0000
 #define WHITE 0xFFFF
@@ -46,20 +53,24 @@ const uint8_t render_offset_y = 1;
 const uint8_t y_offset = 4;
 const uint8_t max_y = 23;
 
-const uint8_t button_right_pin = 0;
-const uint8_t button_left_pin = 35;
+const uint8_t button_right_pin = 35;
+const uint8_t button_left_pin = 0;
 
-const uint32_t thresh_b_active = 300;
-const uint32_t thresh_b_longpress = 500;
+const uint32_t thresh_b_active = 60;
+const uint32_t thresh_b_longpress = 200;
+// const uint32_t thresh_b_longpress_repeat = 300;
 
 uint32_t btimer_right = 0;
 uint32_t btimer_left = 0;
 
-ButtonAction prev_bstate_right = ButtonAction::no_press;
-ButtonAction prev_bstate_left = ButtonAction::no_press;
+// uint32_t btimer_longpress_right = 0;
+// uint32_t btimer_longpress_left = 0;
 
-ButtonAction curr_bstate_right = ButtonAction::no_press;
-ButtonAction curr_bstate_left = ButtonAction::no_press;
+// ButtonAction prev_bstate_right = ButtonAction::no_action;
+// ButtonAction prev_bstate_left = ButtonAction::no_action;
+
+ButtonState curr_bstate_right = ButtonState::no_press;
+ButtonState curr_bstate_left = ButtonState::no_press;
 
 
 //Function declaration
@@ -274,15 +285,15 @@ void setup() {
   pinMode(button_left_pin, INPUT_PULLUP);
   pinMode(button_right_pin, INPUT_PULLUP);
 
-  tft.fillScreen(0XFEEF);
-  tft.fillRect(0, 0, 16, 32, RED);
-  tft.fillRect(16, 0, 16, 80, BLUE);
-  tft.fillRect(32, 0, 16, 80, PINK);
-  tft.fillRect(48, 0, 16, 80, YELLOW);
-  tft.fillRect(64, 0, 16, 80, GREEN);
-  tft.fillRect(80, 0, 16, 80, CYAN);
-  tft.fillRect(96, 0, 16, 80, PURPLE);
-  tft.fillRect(128, 0, 16, 80, WHITE);
+  tft.fillScreen(0X888F);
+  // tft.fillRect(0, 0, 16, 32, RED);
+  // tft.fillRect(16, 0, 16, 80, BLUE);
+  // tft.fillRect(32, 0, 16, 80, PINK);
+  // tft.fillRect(48, 0, 16, 80, YELLOW);
+  // tft.fillRect(64, 0, 16, 80, GREEN);
+  // tft.fillRect(80, 0, 16, 80, CYAN);
+  // tft.fillRect(96, 0, 16, 80, PURPLE);
+  // tft.fillRect(128, 0, 16, 80, WHITE);
 
   resetGame();
   Serial.println("init game");
@@ -302,13 +313,13 @@ void loop(void) {
   }
 
   if (!game_pause) {
+    // Serial.println("debug: shapeAction");
+    applyShapeAction();
+
     if (gm_ticked) {
       
-      Serial.println("debug: shapeAction");
-      applyShapeAction();
-      
       if (tick_count_falldown >= falldown_ticks) {
-        Serial.println("debug: moveShape");
+        // Serial.println("debug: moveShape: dropdown");
         moveShape(0, 1, 1);
       }
 
@@ -372,40 +383,146 @@ void summonShape() {
 }
 
 
-ButtonAction getButtonState(ButtonAction current_state, bool phys_input, uint32_t b_timer) {
+ButtonAction getButtonState(ButtonState &current_state, bool phys_input, uint32_t &b_timer) {
+
+  ButtonAction ret = ButtonAction::no_action;
 
   if (phys_input) {
-    if (b_timer > thresh_b_active) {
 
-    }
+    // Serial.println("debug: positive phys_input: current state: " + static_cast<String>(current_state));
 
-    if (b_timer > thresh_b_longpress) {
-      
+    switch (current_state) {
+      case (ButtonState::no_press): {
+        current_state = ButtonState::active_no_press;
+
+        b_timer = millis();
+
+        break;
+      }
+      case (ButtonState::active_no_press): {
+        if ((millis() - b_timer) > thresh_b_active) {
+          current_state = ButtonState::short_press_state;
+          b_timer = millis();
+        }
+
+        break;
+      }
+      case (ButtonState::short_press_state): {
+        // Serial.println("debug: long press: shortpress to longpress");
+        if ((millis() - b_timer) > thresh_b_longpress) {
+          current_state = ButtonState::long_press_state;
+          b_timer = millis();
+          ret = ButtonAction::long_press;
+        }
+        // Serial.println("getButtonState(): unexpected input state condition");
+
+        break;
+      }
+      case (ButtonState::long_press_state): {
+
+        // Serial.println("debug: long press: longpress");
+        if ((millis() - b_timer) > thresh_b_longpress) {
+          // Serial.println("debug: long press: condition met");
+          current_state = ButtonState::long_press_state;
+          ret = ButtonAction::long_press;
+          b_timer = millis();
+        }
+
+        break;
+      }
+      default:
+        break;
     }
   }
   else {
-    if (current_state == ButtonAction::short_press_area) {
-      return ButtonAction::pressed;
+    switch (current_state) {
+      case (ButtonState::no_press): {
+        break;
+      }
+      case (ButtonState::active_no_press): {
+        break;
+      }
+      case (ButtonState::short_press_state): {
+        ret = ButtonAction::short_press;
+        b_timer = millis();
+        break;
+      }
+      case (ButtonState::long_press_state): {
+        break;
+      }
+      default:
+        break;
     }
-    else if ((current_state == ButtonAction::long_press)|| (current_state == ButtonAction::pressed)) {
-      return ButtonAction::no_press;
-    }
+
+    current_state = ButtonState::no_press;
   }
 
+  return ret;
 };
 
 
 void getInput() {
-  GameAction action = none;
+  GameAction action = GameAction::none;
+  ButtonAction action_left = ButtonAction::no_action;
+  ButtonAction action_right = ButtonAction::no_action;
 
-  bool inp_r = !digitalRead(button_left_pin);
+  bool inp_r = !digitalRead(button_right_pin);
 
-  curr_bstate_right = getButtonState(curr_bstate_right, inp_r);
+  action_right = getButtonState(curr_bstate_right, inp_r, btimer_right);
 
-  if (inp_r > )
+  bool inp_l = !digitalRead(button_left_pin);
+  action_left = getButtonState(curr_bstate_left, inp_l, btimer_left);
+
+  // Serial.println("debug: getInput: inp_r: " + static_cast<String>(inp_r));
+  // Serial.println("debug: getInput: inp_l: " + static_cast<String>(inp_l));
+
+  if (action_right == action_left) {
+    if (action_right == ButtonAction::short_press) {
+      action = GameAction::pause_action;
+    }
+    else if (action_right == ButtonAction::long_press) {
+      action = GameAction::none;
+    }
+  }
+  else {
+    switch (action_left) {
+      case (ButtonAction::no_action): {
+        break;
+      }
+      case (ButtonAction::short_press): {
+        action = GameAction::rotate_left;
+        break;
+      }
+      case (ButtonAction::long_press): {
+        action = GameAction::move_left;
+        break;
+      }
+    }
 
 
-  bool inp_l = !digitalRead(button_right_pin);
+    switch (action_right) {
+      case (ButtonAction::no_action): {
+        break;
+      }
+      case (ButtonAction::short_press): {
+        action = GameAction::rotate_right;
+        break;
+      }
+      case (ButtonAction::long_press): {
+        action = GameAction::move_right;
+        break;
+      }
+    }
+  }
+
+  if (action_left != ButtonAction::no_action) {
+    Serial.println("debug: getInput: button_ACTION: " + static_cast<String>(action_left));
+  }
+
+  if (action != GameAction::none) {
+    Serial.println("debug: getInput: game_ACTION: " + static_cast<String>(action));
+  }
+  
 
   next_action = action;
 }
@@ -418,7 +535,7 @@ void renderShape(bool clean_out, uint8_t set_rotation, uint8_t set_x, uint8_t se
   uint16_t color = getColor(current_shape + 1);
 
   for (uint8_t iy = 0; iy < 4; ++iy) {
-    Serial.println(set_y + iy);
+    // Serial.println(set_y + iy);
     if (set_y + iy >= y_offset) {
 
       for (uint8_t ix = 0; ix < 4; ++ix) {
@@ -447,6 +564,11 @@ from bottom to top (23 - 4)
 */
 void renderMatrix(uint8_t set_y) {
   uint8_t mat_y = set_y - y_offset;
+
+  if (mat_y > max_y) {
+    mat_y = max_y;
+    Serial.println("mat y error, exceeds 23");
+  }
 
   tft.fillRect(block_size * render_offset_x, block_size * render_offset_y,
      block_size * matrix_width, block_size * (mat_y + 1), BLACK);
@@ -692,6 +814,9 @@ bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation) {
 
   current_x += modif_x;
   current_y += modif_y;
+
+  if (modif_rotation != 1)
+    Serial.println("debug: moveShape: modif_rotation: " + static_cast<char>(modif_rotation));
 
   uint8_t prev_rotation = current_rotation;
 
