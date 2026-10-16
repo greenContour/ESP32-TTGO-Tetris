@@ -1,6 +1,6 @@
 Finetune:
-    - drop speed
-    - control time/delays
+    - Pause render
+    - next shape render
 
 Add :
     render:
@@ -8,16 +8,8 @@ Add :
         - borders
         - misc
     game mechanic:
-        - speed drop
-        - show next figure
         - show score on gameOver
         - save scores???
         - row completion delay - (remove the delay() function!)
-    more control functions:
-        - pause/start
-
-
-Stress test/debug:
-    - input
 
 
