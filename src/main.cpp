@@ -838,11 +838,12 @@ void checkFixation() {
 
 void pauseGame() {
   game_pause = true;
+  uint8_t font_size = 2;
 
   wipeScreen();
 
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  tft.drawString("PAUSE", block_size * (render_offset_x + 1) + block_size / 2, block_size * (matrix_height / 2), 4);
+  tft.drawString("PAUSE", block_size * (render_offset_x + matrix_width / 2) - tft.textWidth("PAUSE", font_size) / 2, block_size * (render_offset_y + matrix_height / 2) - tft.fontHeight(font_size) / 2, font_size);
 }
 
 
@@ -958,20 +959,20 @@ bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation) {
 uint8_t getNextShape() {
   uint8_t ret = next_shapes[0];
 
-  Serial.print("Next Shapes: ");
+  // Serial.print("Next Shapes: ");
 
   for (int8_t i = 0; i < max_next_shapes - 1; i++) {
     next_shapes[i] = next_shapes[i + 1];
-    Serial.print(next_shapes[i]);
-    Serial.print(" ");
+    // Serial.print(next_shapes[i]);
+    // Serial.print(" ");
   }
 
   next_shapes[max_next_shapes - 1] = (static_cast<uint8_t>(esp_random() % 7));
   Serial.println(next_shapes[max_next_shapes - 1]);
   renderNextShapes();
 
-  Serial.print("Ret: ");
-  Serial.println(ret);
+  // Serial.print("Ret: ");
+  // Serial.println(ret);
 
   return ret;
 }

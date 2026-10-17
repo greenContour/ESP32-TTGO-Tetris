@@ -1,10 +1,7 @@
-Finetune:
-    - Pause render
-    - next shape render
+
 
 Add :
     render:
-        - score
         - borders
         - misc
     game mechanic:
