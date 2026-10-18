@@ -1,9 +1,6 @@
-
-
 Add :
     render:
         - borders
-        - misc
     game mechanic:
         - show score on gameOver
         - save scores???

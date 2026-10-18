@@ -49,19 +49,26 @@ const uint32_t thresh_longpress = 180;
 // const uint32_t thresh_b_longpress_repeat = 300;
 
 #define GRAY tft.color565(32, 32, 32)
+#define DARKGREY tft.color565(4, 4, 4)
+
+// 0b 00000|000000|00000
 
 uint32_t bstate_t_right = 0;
 uint32_t bstate_t_left = 0;
 
 
-// Timer used to measure offset between double presses 
+// Time for double presses 
 const uint32_t thresh_double = 120;
+
+// Second press wait time // partner wait time
 uint32_t right_t_wait = 0;
 uint32_t left_t_wait = 0;
 
 // uint32_t btimer_longpress_right = 0;
 // uint32_t btimer_longpress_left = 0;
 
+
+// Waits for second press // waits for partner: if (left_waits) => left was pressed, waiting for right
 bool right_waits = false;
 bool left_waits = false;
 
@@ -486,7 +493,7 @@ void getInput() {
   bool r_held = curr_bstate_right != ButtonState::no_press;
   bool l_held = curr_bstate_left != ButtonState::no_press;
 
-  falldown_speed_modifier = (curr_bstate_left == ButtonState::long_press_state && curr_bstate_right == ButtonState::long_press_state) ? 2 : 1;
+  falldown_speed_modifier = (curr_bstate_left == ButtonState::long_press_state && curr_bstate_right == ButtonState::long_press_state) ? 3 : 1;
 
   if (action_left == action_right && action_left == ButtonAction::short_press) { left_waits = right_waits = false; game_action = GameAction::pause_action; }
   else if (action_left == ButtonAction::short_press) {
@@ -518,41 +525,6 @@ void getInput() {
 }
 
 
-// void renderShape(bool clean_out, uint8_t set_rotation, uint8_t set_x, uint8_t set_y) {
-//   uint8_t ret_x = 0;
-//   uint8_t ret_y = 0;
-// 
-//   uint16_t color = getColor(current_shape + 1);
-// 
-//   for (uint8_t iy = 0; iy < 4; ++iy) {
-//     // Serial.println(set_y + iy);
-//     if ((set_y + iy) >= y_offset && (set_y + iy) <= max_y) {
-//       ret_y = (set_y + iy + render_offset_y) - y_offset;
-// 
-//       for (uint8_t ix = 0; ix < 4; ++ix) {
-// 
-//         if ((set_x + ix <= max_x) && (set_x + ix >= min_x)) {
-        // 
-//           ret_x = (set_x + ix + render_offset_x) - min_x;
-          // 
-          // 
-//           if (shapes[current_shape][set_rotation][iy][ix] > 0) {
-//             if (clean_out) {
-//               tft.fillRect(ret_x * block_size, ret_y * block_size, block_size, block_size, TFT_BLACK);
-//             }
-//             else {
-//               tft.fillRect(ret_x * block_size, ret_y * block_size, block_size, block_size, color);
-//               tft.drawFastVLine(ret_x * block_size, ret_y * block_size, block_size, TFT_BLACK);
-//               tft.drawFastHLine(ret_x * block_size, ret_y * block_size, block_size, TFT_BLACK);
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-// }
-
-
 // shape_id 0-6
 void renderShape(bool clean_out, uint8_t shape_id, uint8_t set_rotation, int16_t scrn_x, int16_t scrn_y) {
   uint16_t color = getColor(shape_id + 1);
@@ -573,11 +545,13 @@ void renderShape(bool clean_out, uint8_t shape_id, uint8_t set_rotation, int16_t
           if (shapes[shape_id][set_rotation][iy][ix] > 0) {
             if (clean_out) {
               tft.fillRect(m_scrn_x, m_scrn_y, block_size, block_size, TFT_BLACK);
+              tft.drawFastVLine(m_scrn_x + block_size - 1, m_scrn_y, block_size, DARKGREY);
+              tft.drawFastHLine(m_scrn_x, m_scrn_y + block_size - 1, block_size, DARKGREY);
             }
             else {
               tft.fillRect(m_scrn_x, m_scrn_y, block_size, block_size, color);
-              tft.drawFastVLine(m_scrn_x, m_scrn_y, block_size, TFT_BLACK);
-              tft.drawFastHLine(m_scrn_x, m_scrn_y, block_size, TFT_BLACK);
+              tft.drawFastVLine(m_scrn_x + block_size - 1, m_scrn_y, block_size, TFT_BLACK);
+              tft.drawFastHLine(m_scrn_x, m_scrn_y + block_size - 1, block_size, TFT_BLACK);
             }
           }
         }
@@ -613,18 +587,28 @@ void renderMatrix(uint8_t set_y=23) {
 
 // ну, тип, красиво же?
 void renderRow(uint8_t row_y) {
+
+  int16_t scrn_y = 0;
+  int16_t scrn_x = 0;
+
   for (uint8_t ix = 0; ix < matrix_width; ix++) {
 
       // Serial.print(game_matrix[row_y][ix]);
       // Serial.print(" ");
+      scrn_y = (row_y + render_offset_y) * block_size;
+      scrn_x = (ix + render_offset_x) * block_size;
 
-      tft.fillRect((ix + render_offset_x) * block_size, (row_y + render_offset_y) * block_size, block_size, block_size, getColor(game_matrix[row_y][ix]));
+      tft.fillRect(scrn_x, scrn_y, block_size, block_size, getColor(game_matrix[row_y][ix]));
 
-      if (game_matrix[row_y][ix] > 0) {
+      // if (game_matrix[row_y][ix] > 0) {
         // tft.fillRect((ix + render_offset_x) * block_size, (row_y + y_offset) * block_size, block_size, block_size, getColor(game_matrix[row_y][ix]));
-        tft.drawFastVLine((ix + render_offset_x) * block_size, (row_y + render_offset_y) * block_size, block_size, TFT_BLACK);
-        tft.drawFastHLine((ix + render_offset_x) * block_size, (row_y + render_offset_y) * block_size, block_size, TFT_BLACK);
-      }
+      tft.drawFastVLine(scrn_x + block_size - 1, scrn_y, block_size, (game_matrix[row_y][ix] > 0) ? TFT_BLACK : DARKGREY);
+      tft.drawFastHLine(scrn_x, scrn_y + block_size - 1, block_size - 1, (game_matrix[row_y][ix] > 0) ? TFT_BLACK : DARKGREY);
+      // }
+      // else {
+      //   tft.drawFastVLine((ix + render_offset_x + 1) * block_size, (row_y + render_offset_y) * block_size, block_size, DARKGREY);
+      //   tft.drawFastHLine((ix + render_offset_x) * block_size, (row_y + render_offset_y + 1) * block_size, block_size, DARKGREY);
+      // }
     }
   // Serial.print("  ");
   // Serial.print(row_y);
