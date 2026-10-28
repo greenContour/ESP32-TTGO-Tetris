@@ -309,14 +309,6 @@ void setup() {
   tft.fillScreen(GRAY);
   tft.drawFastVLine((render_offset_x + matrix_width) * block_size, render_offset_y * block_size, block_size * matrix_height, TFT_BLACK);
   tft.drawFastHLine(render_offset_x * block_size, (render_offset_y + matrix_height) * block_size, block_size * matrix_width, TFT_BLACK);
-  // tft.fillRect(0, 0, 16, 32, RED);
-  // tft.fillRect(16, 0, 16, 80, BLUE);
-  // tft.fillRect(32, 0, 16, 80, PINK);
-  // tft.fillRect(48, 0, 16, 80, YELLOW);
-  // tft.fillRect(64, 0, 16, 80, GREEN);
-  // tft.fillRect(80, 0, 16, 80, CYAN);
-  // tft.fillRect(96, 0, 16, 80, PURPLE);
-  // tft.fillRect(128, 0, 16, 80, WHITE);
 
   resetGame();
   Serial.println("init game");
@@ -332,22 +324,17 @@ void loop(void) {
     gm_ticked = true;
 
     tick_count_falldown++;
-    // Serial.println("Timer ticked!");
   }
 
   if (!game_pause) {
-    // Serial.println("debug: shapeAction");
     applyShapeAction();
 
     if (gm_ticked) {
       
       if (tick_count_falldown >= falldown_ticks) {
-        // Serial.println("debug: moveShape: dropdown");
         moveShape(0, 1, 1);
       }
 
-      // Serial.println("Position x: " + static_cast<String>(current_x) + " Position y: " + static_cast<String>(current_y) + " Rotation: " + static_cast<String>(current_rotation));
-      
       gm_ticked = false;
 
       main_timer = millis();
@@ -420,8 +407,6 @@ ButtonAction getButtonState(ButtonState &current_state, bool phys_input, uint32_
 
   if (phys_input) {
 
-    // Serial.println("debug: positive phys_input: current state: " + static_cast<String>(current_state));
-
     switch (current_state) {
       case (ButtonState::no_press): {
         current_state = ButtonState::active_no_press;
@@ -438,21 +423,18 @@ ButtonAction getButtonState(ButtonState &current_state, bool phys_input, uint32_
         break;
       }
       case (ButtonState::short_press_state): {
-        // Serial.println("debug: long press: shortpress to longpress");
         if ((millis() - b_timer) > thresh_longpress) {
           current_state = ButtonState::long_press_state;
           b_timer = millis();
           ret = ButtonAction::long_press_active;
         }
-        // Serial.println("getButtonState(): unexpected input state condition");
 
         break;
       }
       case (ButtonState::long_press_state): {
 
-        // Serial.println("debug: long press: longpress");
         if ((millis() - b_timer) > thresh_longpress) {
-          // Serial.println("debug: long press: condition met");
+
           current_state = ButtonState::long_press_state;
           ret = ButtonAction::long_press_active;
           b_timer = millis();
@@ -525,14 +507,13 @@ void getInput() {
 }
 
 
-// shape_id 0-6
+// Note: Shape_id is in range of 0-6
 void renderShape(bool clean_out, uint8_t shape_id, uint8_t set_rotation, int16_t scrn_x, int16_t scrn_y) {
   uint16_t color = getColor(shape_id + 1);
   int16_t m_scrn_y = 0;
   int16_t m_scrn_x = 0;
 
   for (uint8_t iy = 0; iy < 4; ++iy) {
-    // Serial.println(set_y + iy);
     m_scrn_y = scrn_y + iy * block_size;
 
     if ((m_scrn_y >= render_offset_y * block_size) && (m_scrn_y <= screen_height- block_size)) {
@@ -562,7 +543,7 @@ void renderShape(bool clean_out, uint8_t shape_id, uint8_t set_rotation, int16_t
 
 
 /*
-renders the matrix starting from set_y (default - 23)
+Renders the matrix starting from set_y (default - 23)
 from bottom to top (23 - 4)
 */
 void renderMatrix(uint8_t set_y=23) {
@@ -570,7 +551,7 @@ void renderMatrix(uint8_t set_y=23) {
 
   if (mat_y >= matrix_height) {
     mat_y = matrix_height - 1;
-    // Serial.println("mat y error, exceeds matrix_height");
+    // w! spaghetti code
   }
 
   tft.fillRect(block_size * render_offset_x, block_size * render_offset_y,
@@ -579,9 +560,6 @@ void renderMatrix(uint8_t set_y=23) {
   for (int8_t iy = mat_y; iy >= 0; iy--) {
 
     renderRow(iy);
-
-    // Serial.print("rendering row: ");
-    // Serial.println(iy);
   }
 }
 
@@ -593,26 +571,14 @@ void renderRow(uint8_t row_y) {
 
   for (uint8_t ix = 0; ix < matrix_width; ix++) {
 
-      // Serial.print(game_matrix[row_y][ix]);
-      // Serial.print(" ");
       scrn_y = (row_y + render_offset_y) * block_size;
       scrn_x = (ix + render_offset_x) * block_size;
 
       tft.fillRect(scrn_x, scrn_y, block_size, block_size, getColor(game_matrix[row_y][ix]));
 
-      // if (game_matrix[row_y][ix] > 0) {
-        // tft.fillRect((ix + render_offset_x) * block_size, (row_y + y_offset) * block_size, block_size, block_size, getColor(game_matrix[row_y][ix]));
       tft.drawFastVLine(scrn_x + block_size - 1, scrn_y, block_size, (game_matrix[row_y][ix] > 0) ? TFT_BLACK : DARKGREY);
       tft.drawFastHLine(scrn_x, scrn_y + block_size - 1, block_size - 1, (game_matrix[row_y][ix] > 0) ? TFT_BLACK : DARKGREY);
-      // }
-      // else {
-      //   tft.drawFastVLine((ix + render_offset_x + 1) * block_size, (row_y + render_offset_y) * block_size, block_size, DARKGREY);
-      //   tft.drawFastHLine((ix + render_offset_x) * block_size, (row_y + render_offset_y + 1) * block_size, block_size, DARKGREY);
-      // }
     }
-  // Serial.print("  ");
-  // Serial.print(row_y);
-  // Serial.println(" END");
 }
 
 
@@ -834,16 +800,12 @@ void pauseGame() {
 void resetGame() {
   Serial.println("Reset game!");
   tft.fillScreen(GRAY);
-  // Serial.println("debug: resetGame: matrix reset start");
 
   for (uint8_t iy = 0; iy < matrix_height; ++iy) {
     for (uint8_t ix = 0; ix < matrix_width; ++ix) {
-      // Serial.println("X: " + static_cast<String>(ix) + " Y: " + static_cast<String>(iy));
       game_matrix[iy][ix] = 0;
     }
   }
-
-  // Serial.println("debug: resetGame: matrix reset end");
 
   current_rotation = 0;
 
@@ -868,9 +830,7 @@ void resetGame() {
   
   renderScore();
 
-  // Serial.println("debug: resetGame: matrix render start");
   renderMatrix();
-  // Serial.println("debug: resetGame: matrix render end");
 }
 
 
@@ -886,9 +846,6 @@ bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation) {
 
   current_x += modif_x;
   current_y += modif_y;
-
-  // if (modif_rotation != 1)
-    // Serial.println("debug: moveShape: modif_rotation: " + static_cast<char>(modif_rotation));
 
   uint8_t prev_rotation = current_rotation;
 
@@ -908,11 +865,7 @@ bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation) {
     }
   }
 
-  // Serial.println("debug: moveShape: rotated");
-
   if (checkCollision()) {
-    //  Serial.println("debug: moveShape: checkCollision = True");
-
     current_x -= modif_x;
     current_y -= modif_y;
     current_rotation = prev_rotation;
@@ -925,15 +878,12 @@ bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation) {
   }
   else {
 
-    // Serial.println("debug: moveShape: renderShape");
     int16_t scrn_x = (render_offset_x + current_x - min_gc_x) * block_size;
     int16_t scrn_y = (render_offset_y + current_y - min_gc_y) * block_size;
 
     renderShape(true, current_shape, prev_rotation, scrn_x - static_cast<int16_t>(modif_x * block_size), scrn_y - static_cast<int16_t>(modif_y * block_size));
 
     renderShape(false, current_shape, current_rotation, scrn_x, scrn_y);
-
-    // Serial.println("debug: moveShape: renderShape end");
     
     return true;
   }
@@ -943,27 +893,19 @@ bool moveShape(int8_t modif_x, int8_t modif_y, uint8_t modif_rotation) {
 uint8_t getNextShape() {
   uint8_t ret = next_shapes[0];
 
-  // Serial.print("Next Shapes: ");
-
   for (int8_t i = 0; i < max_next_shapes - 1; i++) {
     next_shapes[i] = next_shapes[i + 1];
-    // Serial.print(next_shapes[i]);
-    // Serial.print(" ");
   }
 
   next_shapes[max_next_shapes - 1] = (static_cast<uint8_t>(esp_random() % 7));
   Serial.println(next_shapes[max_next_shapes - 1]);
   renderNextShapes();
 
-  // Serial.print("Ret: ");
-  // Serial.println(ret);
-
   return ret;
 }
 
 
 void renderNextShapes() {
-  // ((screen_width / block_size) - 4) * block_size;
   int16_t render_x = (render_offset_x + matrix_width + 1) * block_size;
   int16_t render_y = render_offset_y * block_size;
 
